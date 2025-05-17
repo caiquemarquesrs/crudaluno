@@ -49,6 +49,16 @@ public class AlunoDAO implements IAlunoDAO {
         return alunos;
     }
 
+    public List<Aluno> findByCurso(String curso) {
+        List<Aluno> alunosDoCurso = new ArrayList<>();
+        for (Aluno aluno : findAll()) {
+            if (aluno.getCurso() != null && aluno.getCurso().toString().equalsIgnoreCase(curso)) {
+                alunosDoCurso.add(aluno);
+            }
+        }
+        return alunosDoCurso;
+    }
+
     @Override
     public void update(Aluno aluno) {
         String sql = "UPDATE alunos SET nome = ?, idade = ?, curso = ? WHERE id = ?";
