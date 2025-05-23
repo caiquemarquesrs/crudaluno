@@ -1,8 +1,9 @@
 package com.example.crudaluno;
 
 import br.com.puc.dao.AlunoDAO;
+import br.com.puc.dao.CursoDAO;
 import br.com.puc.model.Aluno;
-import br.com.puc.model.Cursos;
+import br.com.puc.model.Curso;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -21,6 +22,8 @@ public class PesquisaController implements Initializable {
     @FXML
     private TextField txtPesquisa;
     @FXML
+    private ComboBox<Curso> cbCursoPesquisa;
+    @FXML
     private TableView<Aluno> tablePesquisa;
     @FXML
     private TableColumn<Aluno, Integer> colId;
@@ -29,11 +32,12 @@ public class PesquisaController implements Initializable {
     @FXML
     private TableColumn<Aluno, Integer> colIdade;
     @FXML
-    private TableColumn<Aluno, Cursos> colCurso;
+    private TableColumn<Aluno, String> colCurso;
     @FXML
     private Button btnExcluir;
 
     private AlunoDAO alunoDAO;
+    private CursoDAO cursoDAO;
     private ObservableList<Aluno> alunosList;
     private HelloController mainController;
     private PesquisaController pesquisaController;
@@ -41,17 +45,42 @@ public class PesquisaController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         this.alunoDAO = new AlunoDAO();
+        this.cursoDAO = new CursoDAO();
         colId.setCellValueFactory(new PropertyValueFactory<>("id"));
         colNome.setCellValueFactory(new PropertyValueFactory<>("nome"));
         colIdade.setCellValueFactory(new PropertyValueFactory<>("idade"));
-        colCurso.setCellValueFactory(new PropertyValueFactory<>("curso"));
+        colCurso.setCellValueFactory(cellData -> {
+            Aluno aluno = cellData.getValue();
+            String cursoSigla = aluno.getCursoSigla();
+            return javafx.beans.binding.Bindings.createStringBinding(() -> cursoSigla);
+        });
+        List<Curso> cursos = cursoDAO.findAll();
+        cbCursoPesquisa.setItems(FXCollections.observableArrayList(cursos));
+        cbCursoPesquisa.setCellFactory(param -> new ListCell<Curso>() {
+            @Override
+            protected void updateItem(Curso item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(item.getNome() + " (" + item.getSigla() + ")");
+                }
+            }
+        });
+
+        cbCursoPesquisa.setButtonCell(new ListCell<Curso>() {
+            @Override
+            protected void updateItem(Curso item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(item.getNome() + " (" + item.getSigla() + ")");
+                }
+            }
+        });
+
         btnExcluir.setDisable(false);
-        carregarTodosAlunos();
-        if (btnExcluir != null) {
-            btnExcluir.setDisable(false);
-        } else {
-            System.out.println("AVISO: btnExcluir não foi injetado corretamente.");
-        }
         carregarTodosAlunos();
     }
 
@@ -77,7 +106,6 @@ public class PesquisaController implements Initializable {
         }
     }
 
-
     @FXML
     private void handlePesquisar(ActionEvent event) {
         String termo = txtPesquisa.getText().trim();
@@ -85,16 +113,40 @@ public class PesquisaController implements Initializable {
             List<Aluno> alunos;
             if (!termo.isEmpty()) {
                 alunos = alunoDAO.findByNome(termo);
-                System.out.println("Pesquisando por: " + termo + " - Encontrados: " + alunos.size());
+                System.out.println("Pesquisando por nome: " + termo + " - Encontrados: " + alunos.size());
             } else {
                 alunos = alunoDAO.findAll();
                 System.out.println("Carregando todos - Encontrados: " + alunos.size());
             }
+
             alunosList = FXCollections.observableArrayList(alunos);
             tablePesquisa.setItems(alunosList);
             tablePesquisa.refresh();
         } catch (Exception e) {
-            System.out.println("Erro na pesquisa: " + e.getMessage());
+            System.out.println("Erro na pesquisa por nome: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    private void handlePesquisarPorCurso(ActionEvent event) {
+        try {
+            Curso cursoSelecionado = cbCursoPesquisa.getValue();
+            List<Aluno> alunos;
+
+            if (cursoSelecionado != null) {
+                alunos = alunoDAO.findByCurso(cursoSelecionado.getSigla());
+                System.out.println("Pesquisando por curso: " + cursoSelecionado.getSigla() + " - Encontrados: " + alunos.size());
+            } else {
+                alunos = alunoDAO.findAll();
+                System.out.println("Nenhum curso selecionado. Carregando todos - Encontrados: " + alunos.size());
+            }
+
+            alunosList = FXCollections.observableArrayList(alunos);
+            tablePesquisa.setItems(alunosList);
+            tablePesquisa.refresh();
+        } catch (Exception e) {
+            System.out.println("Erro na pesquisa por curso: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -102,7 +154,6 @@ public class PesquisaController implements Initializable {
     public void setPesquisaController(PesquisaController controller) {
         this.pesquisaController = controller;
     }
-
 
     @FXML
     private void handleEditar(ActionEvent event) {

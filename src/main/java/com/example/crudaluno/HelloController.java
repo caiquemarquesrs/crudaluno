@@ -1,8 +1,9 @@
 package com.example.crudaluno;
 
 import br.com.puc.dao.AlunoDAO;
+import br.com.puc.dao.CursoDAO;
 import br.com.puc.model.Aluno;
-import br.com.puc.model.Cursos;
+import br.com.puc.model.Curso;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -20,34 +21,71 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 
 public class HelloController implements Initializable {
+
     @FXML
     private TextField txtNome;
+
     @FXML
     private TextField txtIdade;
+
     @FXML
-    private ComboBox<Cursos> cbCurso;
+    private ComboBox<Curso> cbCurso;
+
     @FXML
     private Button btnSalvar;
+
     @FXML
     private Button btnExcluir;
+
     @FXML
     private Button btnLimpar;
+
     @FXML
     private Button btnPesquisar;
+
     private AlunoDAO alunoDAO;
+
+    private CursoDAO cursoDAO;
+
     private int idAtual = 0;
+
     private boolean editando = false;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         alunoDAO = new AlunoDAO();
-        cbCurso.setItems(FXCollections.observableArrayList(Cursos.values()));
+        cursoDAO = new CursoDAO();
+        List<Curso> cursos = cursoDAO.findAll();
+        cbCurso.setItems(FXCollections.observableArrayList(cursos));
+        cbCurso.setCellFactory(param -> new ListCell<Curso>() {
+            @Override
+            protected void updateItem(Curso item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(item.getNome() + " (" + item.getSigla() + ")");
+                }
+            }
+        });
+
+        cbCurso.setButtonCell(new ListCell<Curso>() {
+            @Override
+            protected void updateItem(Curso item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(item.getNome() + " (" + item.getSigla() + ")");
+                }
+            }
+        });
+
         if (btnExcluir != null) {
             btnExcluir.setDisable(false);
         } else {
             System.out.println("AVISO: btnExcluir não foi injetado corretamente.");
         }
-
     }
 
     public void carregarAluno(Aluno aluno) {
@@ -55,7 +93,15 @@ public class HelloController implements Initializable {
             idAtual = aluno.getId();
             txtNome.setText(aluno.getNome());
             txtIdade.setText(String.valueOf(aluno.getIdade()));
-            cbCurso.setValue(aluno.getCurso());
+            Curso curso = aluno.getCurso();
+            if (curso != null) {
+                for (Curso c : cbCurso.getItems()) {
+                    if (c.getSigla().equals(curso.getSigla())) {
+                        cbCurso.setValue(c);
+                        break;
+                    }
+                }
+            }
             editando = true;
             btnSalvar.setText("Atualizar");
         }
@@ -66,9 +112,9 @@ public class HelloController implements Initializable {
         if (validarCampos()) {
             String nome = txtNome.getText();
             int idade = Integer.parseInt(txtIdade.getText());
-            Cursos curso = cbCurso.getValue();
-            Aluno aluno = new Aluno(nome, idade, curso);
-
+            Curso cursoSelecionado = cbCurso.getValue();
+            Aluno aluno = new Aluno(nome, idade, cursoSelecionado.getSigla());
+            aluno.setCurso(cursoSelecionado);
             if (editando && idAtual > 0) {
                 aluno.setId(idAtual);
                 alunoDAO.update(aluno);
@@ -137,7 +183,7 @@ public class HelloController implements Initializable {
     private boolean validarCampos() {
         String nome = txtNome.getText().trim();
         String idade = txtIdade.getText().trim();
-        Cursos curso = cbCurso.getValue();
+        Curso curso = cbCurso.getValue();
         StringBuilder erros = new StringBuilder();
         if (nome.isEmpty()) {
             erros.append("- Nome é obrigatório\n");

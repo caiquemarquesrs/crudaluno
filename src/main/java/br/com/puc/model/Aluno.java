@@ -1,27 +1,26 @@
 package br.com.puc.model;
 
-import br.com.puc.model.Cursos;
-
 public class Aluno {
     private int id;
     private String nome;
     private int idade;
-    private Cursos curso;
+    private String cursoSigla;
+    private Curso curso;
 
     public Aluno() {
     }
 
-    public Aluno(String nome, int idade, Cursos curso) {
+    public Aluno(String nome, int idade, String cursoSigla) {
         this.nome = nome;
         this.idade = idade;
-        this.curso = curso;
+        this.cursoSigla = cursoSigla;
     }
 
-    public Aluno(int id, String nome, int idade, Cursos curso) {
+    public Aluno(int id, String nome, int idade, String cursoSigla) {
         this.id = id;
         this.nome = nome;
         this.idade = idade;
-        this.curso = curso;
+        this.cursoSigla = cursoSigla;
     }
 
     public int getId() {
@@ -48,16 +47,32 @@ public class Aluno {
         this.idade = idade;
     }
 
-    public Cursos getCurso() {
+    public String getCursoSigla() {
+        return cursoSigla;
+    }
+
+    public void setCursoSigla(String cursoSigla) {
+        this.cursoSigla = cursoSigla;
+    }
+
+    public Curso getCurso() {
         return curso;
     }
 
-    public void setCurso(Cursos curso) {
+    public void setCurso(Curso curso) {
         this.curso = curso;
+        if (curso != null) {
+            this.cursoSigla = curso.getSigla();
+        }
     }
 
     @Override
     public String toString() {
-        return "Aluno{" + "id=" + id + ", nome='" + nome + '\'' + ", idade=" + idade + ", curso=" + curso + '}';
+        return "Aluno{" +
+                "id=" + id +
+                ", nome='" + nome + '\'' +
+                ", idade=" + idade +
+                ", cursoSigla='" + cursoSigla + '\'' +
+                '}';
     }
 }
